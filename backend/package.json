@@ -1,0 +1,21 @@
+{
+  "name": "yonkamania-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.2.9",
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.8.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
