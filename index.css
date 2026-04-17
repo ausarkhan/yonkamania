@@ -1,0 +1,139 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Yonkamania Design System - Dark Modern Aesthetic
+   All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 240 33% 4%;
+    --foreground: 240 10% 93%;
+
+    --card: 240 25% 7%;
+    --card-foreground: 240 10% 93%;
+
+    --popover: 240 25% 7%;
+    --popover-foreground: 240 10% 93%;
+
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 20% 10%;
+    --secondary-foreground: 240 10% 93%;
+
+    --muted: 240 20% 10%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 330 81% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 20% 13%;
+    --input: 240 20% 13%;
+    --ring: 263 70% 50%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 240 25% 7%;
+    --sidebar-foreground: 240 10% 93%;
+    --sidebar-primary: 263 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 20% 10%;
+    --sidebar-accent-foreground: 240 10% 93%;
+    --sidebar-border: 240 20% 13%;
+    --sidebar-ring: 263 70% 50%;
+  }
+
+  .dark {
+    --background: 240 33% 4%;
+    --foreground: 240 10% 93%;
+
+    --card: 240 25% 7%;
+    --card-foreground: 240 10% 93%;
+
+    --popover: 240 25% 7%;
+    --popover-foreground: 240 10% 93%;
+
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 20% 10%;
+    --secondary-foreground: 240 10% 93%;
+
+    --muted: 240 20% 10%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 330 81% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 31%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 20% 13%;
+    --input: 240 20% 13%;
+    --ring: 263 70% 50%;
+
+    --sidebar-background: 240 25% 7%;
+    --sidebar-foreground: 240 10% 93%;
+    --sidebar-primary: 263 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 20% 10%;
+    --sidebar-accent-foreground: 240 10% 93%;
+    --sidebar-border: 240 20% 13%;
+    --sidebar-ring: 263 70% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-outfit antialiased;
+  }
+
+  /* Custom scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(240 20% 20%);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(240 20% 30%);
+  }
+}
+
+@layer utilities {
+  .text-gradient-primary {
+    background: linear-gradient(135deg, hsl(263 70% 50%), hsl(330 81% 60%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-gradient-radial {
+    background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
+  }
+
+  .glass {
+    background: hsl(240 25% 7% / 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(240 20% 15%);
+  }
+}
