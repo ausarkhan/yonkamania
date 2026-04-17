@@ -4,7 +4,6 @@ import { resolvePostAccess } from '../lib/access';
 
 const creatorsRouter = new Hono();
 
-// Get featured/all creators from creator_profiles
 creatorsRouter.get('/', async (c) => {
   const { data: creators, error } = await supabaseAdmin
     .from('creator_profiles')
@@ -16,7 +15,6 @@ creatorsRouter.get('/', async (c) => {
     return c.json({ error: { message: 'Failed to fetch creators', code: 'FETCH_FAILED' } }, 500);
   }
 
-  // Join profile data for each creator
   const creatorsWithProfiles = await Promise.all(
     (creators || []).map(async (cp: Record<string, unknown>) => {
       const userId = cp.user_id as string;
@@ -39,20 +37,19 @@ creatorsRouter.get('/', async (c) => {
   return c.json({ data: creatorsWithProfiles });
 });
 
-// Get creator profile with posts (access-controlled per viewer)
 creatorsRouter.get('/:id', async (c) => {
   const creatorId = c.req.param('id');
 
-  // Extract optional viewer identity up-front — used for access checks and isFollowing
   let userId: string | null = null;
   const authHeader = c.req.header('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+    const {
+      data: { user },
+    } = await supabaseAdmin.auth.getUser(token);
     if (user) userId = user.id;
   }
 
-  // creator_profiles uses user_id as PK
   const { data: creator, error: creatorError } = await supabaseAdmin
     .from('creator_profiles')
     .select('*')
@@ -65,7 +62,6 @@ creatorsRouter.get('/:id', async (c) => {
 
   const resolvedId = (creator as Record<string, unknown>).user_id as string ?? creatorId;
 
-  // Fetch profile info (display_name, avatar_url) from profiles table
   const { data: profileData } = await supabaseAdmin
     .from('profiles')
     .select('display_name, avatar_url, username, bio')
@@ -81,17 +77,13 @@ creatorsRouter.get('/:id', async (c) => {
     .limit(20);
 
   const rawPosts = posts ?? [];
-
-  // Batch-resolve access for all posts (2 DB queries max)
   const accessMap = await resolvePostAccess(userId, rawPosts);
 
-  // Sign media URLs only for posts the viewer can access; redact media for locked posts
   const postsWithAccess = await Promise.all(
     rawPosts.map(async (post) => {
       const hasAccess = accessMap.get(post.id) ?? false;
 
       if (!hasAccess) {
-        // Return post metadata but no media — client shows locked UI
         return { ...post, post_media: [], has_access: false };
       }
 
@@ -117,20 +109,17 @@ creatorsRouter.get('/:id', async (c) => {
     })
   );
 
-  // Get subscriber count
   const { count: subscriberCount } = await supabaseAdmin
     .from('subscriptions')
     .select('*', { count: 'exact', head: true })
     .eq('creator_id', resolvedId)
     .eq('status', 'active');
 
-  // Get follow count
   const { count: followCount } = await supabaseAdmin
     .from('follows')
     .select('*', { count: 'exact', head: true })
     .eq('creator_id', resolvedId);
 
-  // Check if requesting user follows this creator
   let isFollowing = false;
   if (userId) {
     const { data: followRow } = await supabaseAdmin

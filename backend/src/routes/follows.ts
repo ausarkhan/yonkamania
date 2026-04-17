@@ -4,7 +4,6 @@ import { authMiddleware, type AuthEnv } from '../middleware/auth';
 
 const followsRouter = new Hono<AuthEnv>();
 
-// POST /:creator_id — follow a creator (auth required)
 followsRouter.post('/:creator_id', authMiddleware, async (c) => {
   const userId = c.get('userId');
   const creatorId = c.req.param('creator_id');
@@ -24,7 +23,6 @@ followsRouter.post('/:creator_id', authMiddleware, async (c) => {
   return c.json({ data: { followed: true } });
 });
 
-// DELETE /:creator_id — unfollow a creator (auth required)
 followsRouter.delete('/:creator_id', authMiddleware, async (c) => {
   const userId = c.get('userId');
   const creatorId = c.req.param('creator_id');
@@ -43,7 +41,6 @@ followsRouter.delete('/:creator_id', authMiddleware, async (c) => {
   return c.json({ data: { followed: false } });
 });
 
-// GET / — get list of creator IDs the current user follows (auth required)
 followsRouter.get('/', authMiddleware, async (c) => {
   const userId = c.get('userId');
 
@@ -58,11 +55,9 @@ followsRouter.get('/', authMiddleware, async (c) => {
   }
 
   const creatorIds = (follows || []).map((f: { creator_id: string }) => f.creator_id);
-
   return c.json({ data: creatorIds });
 });
 
-// GET /count/:creator_id — public, returns follow count for a creator
 followsRouter.get('/count/:creator_id', async (c) => {
   const creatorId = c.req.param('creator_id');
 

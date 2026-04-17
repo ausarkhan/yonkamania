@@ -4,14 +4,14 @@ import { resolvePostAccess } from '../lib/access';
 
 const feedRouter = new Hono();
 
-// GET / — feed of all published posts with access control per viewer
 feedRouter.get('/', async (c) => {
-  // Extract optional viewer identity — used to resolve access for subscriber/ppv posts
   let userId: string | null = null;
   const authHeader = c.req.header('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+    const {
+      data: { user },
+    } = await supabaseAdmin.auth.getUser(token);
     if (user) userId = user.id;
   }
 
@@ -28,15 +28,12 @@ feedRouter.get('/', async (c) => {
   }
 
   const rawPosts = posts ?? [];
-
-  // Batch-resolve access for all posts (2 DB queries max)
   const accessMap = await resolvePostAccess(userId, rawPosts);
 
   const postsWithDetails = await Promise.all(
     rawPosts.map(async (post) => {
       const hasAccess = accessMap.get(post.id) ?? false;
 
-      // Sign media URLs only for accessible posts
       let signedMedia: typeof post.post_media = [];
       if (hasAccess && post.post_media && post.post_media.length > 0) {
         signedMedia = await Promise.all(
@@ -54,7 +51,6 @@ feedRouter.get('/', async (c) => {
         );
       }
 
-      // Fetch creator info
       let creator: { display_name: string | null; avatar_url: string | null } = {
         display_name: null,
         avatar_url: null,

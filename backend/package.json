@@ -1,21 +1,28 @@
 {
-  "name": "yonkamania-backend",
-  "version": "1.0.0",
-  "private": true,
+  "name": "backend",
+  "module": "src/index.ts",
   "type": "module",
-  "packageManager": "bun@1.2.9",
-  "engines": {
-    "bun": ">=1.1.0"
-  },
+  "private": true,
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "bun run --hot src/index.ts",
     "start": "bun run src/index.ts",
-    "check": "tsc --noEmit"
-  },
-  "dependencies": {
-    "hono": "^4.8.2"
+    "studio": "cloud-studio --port 3001 --hostname 0.0.0.0",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "@types/bun": "latest",
+    "typescript": "5.8.3"
+  },
+  "dependencies": {
+    "@hono/node-server": "1.12.0",
+    "@hono/zod-validator": "^0.7.6",
+    "@supabase/supabase-js": "^2.101.1",
+    "@vibecodeapp/backend-sdk": "^1.0.1",
+    "@vibecodeapp/cloud-studio": "^0.2.4",
+    "@vibecodeapp/proxy": "^2.0.3",
+    "hono": "4.6.0",
+    "pdf-lib": "^1.17.1",
+    "stripe": "^22.0.0",
+    "zod": "4.1.11"
   }
 }

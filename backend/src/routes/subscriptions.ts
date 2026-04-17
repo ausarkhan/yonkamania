@@ -4,7 +4,6 @@ import { supabaseAdmin } from '../lib/supabase';
 
 const subscriptionsRouter = new Hono<AuthEnv>();
 
-// GET /api/subscriptions — get current user's active subscriptions
 subscriptionsRouter.get('/', authMiddleware, async (c) => {
   const userId = c.get('userId');
 
@@ -20,9 +19,7 @@ subscriptionsRouter.get('/', authMiddleware, async (c) => {
   }
 
   const rows = subscriptions ?? [];
-
-  // Fetch creator display info from profiles (display_name, avatar_url live on profiles, not creator_profiles)
-  const creatorIds = [...new Set(rows.map((s) => s.creator_id as string))];
+  const creatorIds = [...new Set(rows.map((sub) => sub.creator_id as string))];
   let profileMap: Record<string, { display_name: string | null; avatar_url: string | null; bio: string | null }> = {};
 
   if (creatorIds.length > 0) {
@@ -30,9 +27,13 @@ subscriptionsRouter.get('/', authMiddleware, async (c) => {
       .from('profiles')
       .select('id, display_name, avatar_url, bio')
       .in('id', creatorIds);
-    for (const p of profiles ?? []) {
-      const prof = p as { id: string; display_name: string | null; avatar_url: string | null; bio: string | null };
-      profileMap[prof.id] = { display_name: prof.display_name, avatar_url: prof.avatar_url, bio: prof.bio };
+    for (const profile of profiles ?? []) {
+      const typedProfile = profile as { id: string; display_name: string | null; avatar_url: string | null; bio: string | null };
+      profileMap[typedProfile.id] = {
+        display_name: typedProfile.display_name,
+        avatar_url: typedProfile.avatar_url,
+        bio: typedProfile.bio,
+      };
     }
   }
 
@@ -44,7 +45,6 @@ subscriptionsRouter.get('/', authMiddleware, async (c) => {
   return c.json({ data: enriched });
 });
 
-// GET /api/subscriptions/stats — get subscription stats for the current user
 subscriptionsRouter.get('/stats', authMiddleware, async (c) => {
   const userId = c.get('userId');
 
@@ -59,8 +59,8 @@ subscriptionsRouter.get('/stats', authMiddleware, async (c) => {
   }
 
   const activeCount = subscriptions?.length ?? 0;
-  const monthlySpend = (subscriptions ?? []).reduce((sum, s) => sum + (Number(s.price) || 0), 0);
-  const creatorsSupported = new Set((subscriptions ?? []).map((s) => s.creator_id)).size;
+  const monthlySpend = (subscriptions ?? []).reduce((sum, sub) => sum + (Number(sub.price) || 0), 0);
+  const creatorsSupported = new Set((subscriptions ?? []).map((sub) => sub.creator_id)).size;
 
   return c.json({ data: { activeCount, monthlySpend, creatorsSupported } });
 });

@@ -7,16 +7,16 @@ import { resolvePostAccess } from '../lib/access';
 
 const postsRouter = new Hono<AuthEnv>();
 
-// GET /api/posts?creator_id=... — get posts for a creator (access-controlled per viewer)
 postsRouter.get('/', async (c) => {
   const creatorId = c.req.query('creator_id');
 
-  // Extract optional viewer identity
   let userId: string | null = null;
   const authHeader = c.req.header('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+    const {
+      data: { user },
+    } = await supabaseAdmin.auth.getUser(token);
     if (user) userId = user.id;
   }
 
@@ -41,7 +41,6 @@ postsRouter.get('/', async (c) => {
   const rawPosts = posts ?? [];
   const accessMap = await resolvePostAccess(userId, rawPosts);
 
-  // Sign URLs only for accessible posts; redact media for locked posts
   const postsWithAccess = await Promise.all(
     rawPosts.map(async (post) => {
       const hasAccess = accessMap.get(post.id) ?? false;
@@ -75,7 +74,6 @@ postsRouter.get('/', async (c) => {
   return c.json({ data: postsWithAccess });
 });
 
-// POST /api/posts — create a new post (auth required)
 postsRouter.post(
   '/',
   authMiddleware,
@@ -84,7 +82,6 @@ postsRouter.post(
     const userId = c.get('userId');
     const { caption, access_type, ppv_price, media_items } = c.req.valid('json');
 
-    // Verify the user has a creator profile
     const { data: creator, error: creatorError } = await supabaseAdmin
       .from('creator_profiles')
       .select('user_id')
@@ -95,7 +92,6 @@ postsRouter.post(
       return c.json({ error: { message: 'Creator profile not found', code: 'NOT_CREATOR' } }, 403);
     }
 
-    // Insert the post
     const { data: post, error: postError } = await supabaseAdmin
       .from('posts')
       .insert({
@@ -113,7 +109,6 @@ postsRouter.post(
       return c.json({ error: { message: 'Failed to create post', code: 'CREATE_FAILED' } }, 500);
     }
 
-    // Insert media items if provided
     if (media_items && media_items.length > 0) {
       const mediaRows = media_items.map((item, index) => ({
         post_id: post.id,
@@ -134,12 +129,10 @@ postsRouter.post(
   }
 );
 
-// DELETE /api/posts/:id — delete a post (auth required)
 postsRouter.delete('/:id', authMiddleware, async (c) => {
   const userId = c.get('userId');
   const postId = c.req.param('id');
 
-  // Verify the post belongs to this user
   const { data: post, error: fetchError } = await supabaseAdmin
     .from('posts')
     .select('id, creator_id')
@@ -154,7 +147,6 @@ postsRouter.delete('/:id', authMiddleware, async (c) => {
     return c.json({ error: { message: 'Forbidden', code: 'FORBIDDEN' } }, 403);
   }
 
-  // Delete media rows first (foreign key constraint)
   const { error: mediaDeleteError } = await supabaseAdmin
     .from('post_media')
     .delete()
@@ -165,7 +157,6 @@ postsRouter.delete('/:id', authMiddleware, async (c) => {
     return c.json({ error: { message: 'Failed to delete post media', code: 'DELETE_FAILED' } }, 500);
   }
 
-  // Delete the post
   const { error: deleteError } = await supabaseAdmin
     .from('posts')
     .delete()

@@ -4,12 +4,10 @@ import { supabaseAdmin } from '../lib/supabase';
 
 const authRouter = new Hono<AuthEnv>();
 
-// POST /api/user/bootstrap — create profile if it doesn't exist
 authRouter.post('/bootstrap', authMiddleware, async (c) => {
   const userId = c.get('userId');
   const userEmail = c.get('userEmail');
 
-  // Check for existing profile
   const { data: existing, error: fetchError } = await supabaseAdmin
     .from('profiles')
     .select('*')
@@ -17,7 +15,6 @@ authRouter.post('/bootstrap', authMiddleware, async (c) => {
     .single();
 
   if (fetchError && fetchError.code !== 'PGRST116') {
-    // PGRST116 = row not found, which is expected when no profile exists
     return c.json({ error: { message: 'Failed to check profile', code: 'DB_ERROR' } }, 500);
   }
 
@@ -25,7 +22,6 @@ authRouter.post('/bootstrap', authMiddleware, async (c) => {
     return c.json({ data: { profile: existing, isNew: false } });
   }
 
-  // Create new profile
   const emailPrefix = (userEmail.split('@')[0] ?? 'user').toLowerCase().replace(/[^a-z0-9]/g, '');
   const randomSuffix = Math.random().toString(36).slice(2, 6);
   const username = `${emailPrefix}${randomSuffix}`;
@@ -51,7 +47,6 @@ authRouter.post('/bootstrap', authMiddleware, async (c) => {
   return c.json({ data: { profile: newProfile, isNew: true } });
 });
 
-// GET /api/user/profile — get current user's profile
 authRouter.get('/profile', authMiddleware, async (c) => {
   const userId = c.get('userId');
 
@@ -71,12 +66,10 @@ authRouter.get('/profile', authMiddleware, async (c) => {
   return c.json({ data: profile });
 });
 
-// POST /api/user/become-creator — create creator_profiles row for the current user
 authRouter.post('/become-creator', authMiddleware, async (c) => {
   const userId = c.get('userId');
   const body = await c.req.json().catch(() => ({}));
 
-  // Check if already a creator
   const { data: existing } = await supabaseAdmin
     .from('creator_profiles')
     .select('user_id')
@@ -105,7 +98,6 @@ authRouter.post('/become-creator', authMiddleware, async (c) => {
     return c.json({ error: { message: 'Failed to create creator profile', code: 'DB_ERROR' } }, 500);
   }
 
-  // Mark the profiles row as creator
   await supabaseAdmin
     .from('profiles')
     .update({ role: 'creator', is_creator: true })
@@ -114,12 +106,10 @@ authRouter.post('/become-creator', authMiddleware, async (c) => {
   return c.json({ data: { creator_profile: creatorProfile, already_creator: false } });
 });
 
-// PATCH /api/user/profile — update current user's profile
 authRouter.patch('/profile', authMiddleware, async (c) => {
   const userId = c.get('userId');
   const body = await c.req.json().catch(() => ({}));
 
-  // Only allow safe fields to be updated
   const allowed = ['username', 'display_name', 'avatar_url', 'bio'];
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
@@ -144,7 +134,6 @@ authRouter.patch('/profile', authMiddleware, async (c) => {
   return c.json({ data: profile });
 });
 
-// PATCH /api/user/creator-profile — update creator profile fields
 authRouter.patch('/creator-profile', authMiddleware, async (c) => {
   const userId = c.get('userId');
   const body = await c.req.json().catch(() => ({}));
@@ -173,7 +162,6 @@ authRouter.patch('/creator-profile', authMiddleware, async (c) => {
   return c.json({ data: profile });
 });
 
-// POST /api/user/avatar — upload avatar image to Supabase Storage
 authRouter.post('/avatar', authMiddleware, async (c) => {
   const userId = c.get('userId');
 
@@ -190,20 +178,17 @@ authRouter.post('/avatar', authMiddleware, async (c) => {
     return c.json({ error: { message: 'No file provided', code: 'BAD_REQUEST' } }, 400);
   }
 
-  // Validate type
   const allowed = ['image/jpeg', 'image/png', 'image/webp'];
   if (!allowed.includes(file.type)) {
     return c.json({ error: { message: 'Only JPG, PNG, or WebP images are allowed', code: 'INVALID_TYPE' } }, 400);
   }
 
-  // Validate size (5MB max)
   if (file.size > 5 * 1024 * 1024) {
     return c.json({ error: { message: 'File too large. Max size is 5MB', code: 'TOO_LARGE' } }, 400);
   }
 
   const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
   const storagePath = `${userId}/${Date.now()}.${ext}`;
-
   const arrayBuffer = await file.arrayBuffer();
 
   const { error: uploadError } = await supabaseAdmin.storage
@@ -218,7 +203,9 @@ authRouter.post('/avatar', authMiddleware, async (c) => {
     return c.json({ error: { message: 'Failed to upload image', code: 'UPLOAD_ERROR' } }, 500);
   }
 
-  const { data: { publicUrl } } = supabaseAdmin.storage.from('avatars').getPublicUrl(storagePath);
+  const {
+    data: { publicUrl },
+  } = supabaseAdmin.storage.from('avatars').getPublicUrl(storagePath);
 
   const { error: updateError } = await supabaseAdmin
     .from('profiles')

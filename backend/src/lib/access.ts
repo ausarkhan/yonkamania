@@ -11,11 +11,11 @@ type PostLike = {
  * Returns a Map<post_id, has_access>.
  *
  * Rules:
- *  free         → always true
- *  creator own  → always true (post.creator_id === userId)
- *  subscriber   → user has active/trialing subscription to that creator
- *  ppv          → user has a purchase record for that specific post
- *  unauthenticated → false for subscriber/ppv
+ *  free         -> always true
+ *  creator own  -> always true (post.creator_id === userId)
+ *  subscriber   -> user has active/trialing subscription to that creator
+ *  ppv          -> user has a purchase record for that specific post
+ *  unauthenticated -> false for subscriber/ppv
  *
  * Only 2 DB queries total (batch by creator_id for subs, batch by post_id for purchases).
  */
@@ -34,10 +34,8 @@ export async function resolvePostAccess(
     if (type === 'free') {
       result.set(post.id, true);
     } else if (userId && post.creator_id === userId) {
-      // Creator always has full access to their own posts
       result.set(post.id, true);
     } else if (!userId) {
-      // Unauthenticated — always locked for subscriber/ppv
       result.set(post.id, false);
     } else if (type === 'subscriber') {
       subscriberCreatorIds.add(post.creator_id);
@@ -48,7 +46,6 @@ export async function resolvePostAccess(
     }
   }
 
-  // Batch: check active subscriptions across all relevant creators
   const activeCreatorIds = new Set<string>();
   if (userId && subscriberCreatorIds.size > 0) {
     const { data: subs } = await supabaseAdmin
@@ -62,7 +59,6 @@ export async function resolvePostAccess(
     }
   }
 
-  // Batch: check PPV purchases for all relevant posts
   const purchasedPostIds = new Set<string>();
   if (userId && ppvPostIds.size > 0) {
     const { data: purchases } = await supabaseAdmin
@@ -70,12 +66,11 @@ export async function resolvePostAccess(
       .select('post_id')
       .eq('fan_id', userId)
       .in('post_id', [...ppvPostIds]);
-    for (const p of purchases ?? []) {
-      purchasedPostIds.add(p.post_id as string);
+    for (const purchase of purchases ?? []) {
+      purchasedPostIds.add(purchase.post_id as string);
     }
   }
 
-  // Resolve any posts not yet in the result map
   for (const post of posts) {
     if (result.has(post.id)) continue;
     const type = post.access_type ?? 'free';
